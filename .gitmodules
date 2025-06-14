@@ -1,0 +1,3 @@
+[submodule "mmpretrain"]
+	path = mmpretrain
+	url = https://github.com/open-mmlab/mmpretrain/
