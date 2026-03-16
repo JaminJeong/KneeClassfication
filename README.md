@@ -155,6 +155,11 @@ docker compose --profile jupyter up jupyter  # → http://localhost:8888
 ```
 
 ---
+# Streamlit 데모
+
+![Streamlit 데모](images/streamlit_knee.png)
+
+---
 
 ## 스크립트 옵션 요약
 
