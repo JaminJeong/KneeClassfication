@@ -31,13 +31,14 @@ Ultralytics YOLO 프레임워크를 사용하여 무릎 X-ray 이미지에서 **
 
 ## 빠른 시작
 
-### 1. 설치
+### 1. Docker 환경 진입
 
 ```bash
-git clone https://github.com/your-username/KneeClassfication.git
-cd KneeClassfication
+# GPU 환경 (권장)
+docker compose run --rm yolo bash
 
-pip install -r requirements.txt
+# CPU 환경
+docker compose --profile cpu run --rm yolo-cpu bash
 ```
 
 ### 2. 데이터셋 준비
@@ -52,22 +53,47 @@ cd /home/jayden/data && unzip kneeoa.zip -d knee-osteoarthritis-dataset-with-sev
 
 ### 3. 학습
 
+두 가지 방식을 모두 지원합니다. Docker 컨테이너 내부에서 실행합니다.
+
 ```bash
+# Python 스크립트
 python scripts/train.py --model yolo11s-cls.pt --epochs 100
+
+# Shell 스크립트 (Ultralytics CLI)
+bash scripts/train.sh --model yolo11s-cls.pt --epochs 100
 ```
 
 ### 4. 추론
 
 ```bash
+# Python 스크립트
 python scripts/predict.py \
-  --weights runs/classify/knee_cls/weights/best.pt \
-  --source path/to/xray.png
+  --weights /workspace/runs/classify/knee_cls/weights/best.pt \
+  --source /workspace/data/knee-osteoarthritis-dataset-with-severity/test/0/9003175L.png
+
+# Shell 스크립트 (Ultralytics CLI)
+bash scripts/predict.sh \
+  --weights /workspace/runs/classify/knee_cls/weights/best.pt \
+  --source /workspace/data/knee-osteoarthritis-dataset-with-severity/test/
 ```
 
-### 5. Streamlit 데모 실행
+### 5. 평가
 
 ```bash
-streamlit run example/streamlit_app.py
+# Python 스크립트
+python scripts/evaluate.py \
+  --weights /workspace/runs/classify/knee_cls/weights/best.pt
+
+# Shell 스크립트 (Ultralytics CLI)
+bash scripts/evaluate.sh \
+  --weights /workspace/runs/classify/knee_cls/weights/best.pt \
+  --split test --plot True
+```
+
+### 6. Streamlit 데모
+
+```bash
+docker compose --profile demo up streamlit  # → http://localhost:8501
 ```
 
 ---
@@ -77,16 +103,19 @@ streamlit run example/streamlit_app.py
 ```
 KneeClassfication/
 ├── configs/
-│   └── knee_cls.yaml          # 데이터셋 설정
+│   └── knee_cls.yaml          # 데이터셋 메타 정보 (참고용)
 ├── scripts/
-│   ├── train.py               # 학습 스크립트
-│   ├── predict.py             # 추론 스크립트
-│   └── evaluate.py            # 평가 스크립트
+│   ├── train.py               # 학습 — Python API
+│   ├── train.sh               # 학습 — Ultralytics CLI
+│   ├── predict.py             # 추론 — Python API
+│   ├── predict.sh             # 추론 — Ultralytics CLI
+│   ├── evaluate.py            # 평가 — Python API (per-class 정확도 포함)
+│   └── evaluate.sh            # 평가 — Ultralytics CLI
 ├── example/
 │   └── streamlit_app.py       # Streamlit 데모 앱
 ├── docs/
 │   ├── usage.md               # 상세 사용법
-│   └── dataset.md             # 데이터셋 가이드
+│   └── dataset.md             # 데이터셋 가이드 및 다운로드
 ├── runs/                      # 학습/추론 결과 (gitignore)
 ├── models/                    # 모델 가중치 (gitignore)
 ├── docker-compose.yml         # Docker 환경 설정
@@ -96,13 +125,26 @@ KneeClassfication/
 
 ---
 
-## Docker 사용
+## 실행 방식 비교
+
+| 항목 | Python 스크립트 | Shell 스크립트 (CLI) |
+|------|----------------|-------------------|
+| 파일 | `scripts/*.py` | `scripts/*.sh` |
+| `--data` | 데이터셋 루트 디렉터리 | 데이터셋 루트 디렉터리 |
+| 결과 저장 | `/workspace/runs/classify/` | `/workspace/runs/classify/` |
+| 특징 | 세밀한 제어, 코드 확장 | 빠른 실험, CLI 직접 사용 |
+
+> `--data`는 두 방식 모두 **YAML 파일이 아닌 데이터셋 루트 디렉터리 경로**를 사용합니다.
+
+---
+
+## Docker 전체 서비스
 
 ```bash
-# GPU 환경
+# GPU 학습/추론 (대화형 셸)
 docker compose run --rm yolo bash
 
-# CPU 환경
+# CPU 전용
 docker compose --profile cpu run --rm yolo-cpu bash
 
 # Streamlit 데모
@@ -116,41 +158,48 @@ docker compose --profile jupyter up jupyter  # → http://localhost:8888
 
 ## 스크립트 옵션 요약
 
-### train.py
+### train.py / train.sh
 
-```
---model      모델 크기 (yolo11n/s/m/l/x-cls.pt)
---epochs     학습 에폭 수 (기본: 100)
---imgsz      입력 이미지 크기 (기본: 224)
---batch      배치 크기 (기본: 32)
---device     GPU 번호 또는 'cpu' (기본: 자동)
---lr0        초기 학습률 (기본: 0.01)
---patience   조기 종료 patience (기본: 20)
-```
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `--model` | `yolo11n-cls.pt` | 모델 크기 (n/s/m/l/x) |
+| `--data` | `/workspace/data/...` | 데이터셋 루트 디렉터리 |
+| `--epochs` | `100` | 학습 에폭 수 |
+| `--imgsz` | `224` | 입력 이미지 크기 |
+| `--batch` | `32` | 배치 크기 |
+| `--device` | 자동 | GPU 번호 또는 `cpu` |
+| `--project` | `/workspace/runs/classify` | 결과 저장 디렉터리 |
+| `--name` | `knee_cls` | 실험 이름 |
+| `--lr0` | `0.01` | 초기 학습률 |
+| `--patience` | `20` | 조기 종료 patience |
 
-### predict.py
+### predict.py / predict.sh
 
-```
---weights    학습된 가중치 경로 (필수)
---source     입력 이미지 또는 디렉터리 (필수)
---save       결과 이미지 저장
---save-json  예측 결과를 JSON으로 저장
---top-k      상위 K개 클래스 확률 출력 (기본: 5)
-```
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `--weights` | *(필수)* | 학습된 가중치 경로 |
+| `--source` | *(필수)* | 이미지 또는 디렉터리 경로 |
+| `--save` | `False` | 결과 이미지 저장 |
+| `--save-json` | `False` | 예측 결과 JSON 저장 (py only) |
+| `--top-k` | `5` | 상위 K개 확률 출력 (py only) |
+| `--project` | `/workspace/runs/predict` | 결과 저장 디렉터리 |
 
-### evaluate.py
+### evaluate.py / evaluate.sh
 
-```
---weights    학습된 가중치 경로 (필수)
---split      평가할 데이터 분할 (train/val/test, 기본: test)
---plot       혼동 행렬 등 시각화 저장
-```
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `--weights` | *(필수)* | 학습된 가중치 경로 |
+| `--data` | `/workspace/data/...` | 데이터셋 루트 디렉터리 |
+| `--split` | `test` | 평가 분할 (train/val/test) |
+| `--plot` | `False` | 혼동 행렬 시각화 저장 |
+| `--project` | `/workspace/runs/evaluate` | 결과 저장 디렉터리 |
 
 ---
 
 ## 참고 자료
 
 - [Ultralytics YOLO 문서](https://docs.ultralytics.com/)
+- [Ultralytics Classification Dataset 형식](https://docs.ultralytics.com/datasets/classify/)
 - [UltralyticsDocker 참고 저장소](https://github.com/JaminJeong/UltralyticsDocker)
 - [Kaggle 데이터셋](https://www.kaggle.com/datasets/tommyngx/kneeoa)
 - [KL Grade 논문](https://doi.org/10.1136/ard.16.4.494)
