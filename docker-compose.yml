@@ -39,7 +39,7 @@ services:
     profiles: [demo]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls/weights/best.pt
+      - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls_py_test/weights/best.pt
     ports:
       - "8501:8501"
     volumes:
