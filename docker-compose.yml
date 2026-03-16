@@ -2,7 +2,6 @@ services:
   # GPU-accelerated YOLO training/inference
   yolo:
     image: ultralytics/ultralytics:latest
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -38,7 +37,6 @@ services:
   streamlit:
     image: ultralytics/ultralytics:latest
     profiles: [demo]
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls/weights/best.pt
@@ -60,7 +58,6 @@ services:
   jupyter:
     image: ultralytics/ultralytics:latest
     profiles: [jupyter]
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     ports:
