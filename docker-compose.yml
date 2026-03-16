@@ -1,0 +1,79 @@
+services:
+  # GPU-accelerated YOLO training/inference
+  yolo:
+    image: ultralytics/ultralytics:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./configs:/workspace/configs
+      - ./scripts:/workspace/scripts
+      - ./example:/workspace/example
+      - ./runs:/workspace/runs
+      - ./models:/workspace/models
+      - /home/jayden/data:/workspace/data
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: bash
+
+  # CPU-only (use: docker compose --profile cpu run --rm yolo-cpu bash)
+  yolo-cpu:
+    image: ultralytics/ultralytics:latest-cpu
+    profiles: [cpu]
+    volumes:
+      - ./configs:/workspace/configs
+      - ./scripts:/workspace/scripts
+      - ./example:/workspace/example
+      - ./runs:/workspace/runs
+      - ./models:/workspace/models
+      - /home/jayden/data:/workspace/data
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: bash
+
+  # Streamlit demo
+  streamlit:
+    image: ultralytics/ultralytics:latest
+    profiles: [demo]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls/weights/best.pt
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./configs:/workspace/configs
+      - ./scripts:/workspace/scripts
+      - ./example:/workspace/example
+      - ./runs:/workspace/runs
+      - ./models:/workspace/models
+      - /home/jayden/data:/workspace/data
+    working_dir: /workspace
+    command: >
+      bash -c "pip install streamlit --quiet &&
+               streamlit run example/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
+
+  # Jupyter Lab for experimentation
+  jupyter:
+    image: ultralytics/ultralytics:latest
+    profiles: [jupyter]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./configs:/workspace/configs
+      - ./scripts:/workspace/scripts
+      - ./example:/workspace/example
+      - ./runs:/workspace/runs
+      - ./models:/workspace/models
+      - /home/jayden/data:/workspace/data
+      - ./notebooks:/workspace/notebooks
+    working_dir: /workspace
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+      --NotebookApp.token='' --NotebookApp.password=''

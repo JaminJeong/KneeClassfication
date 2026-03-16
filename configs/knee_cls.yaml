@@ -1,0 +1,19 @@
+# Knee Osteoarthritis Classification Dataset Config
+# Kellgren-Lawrence (KL) Grade Classification
+# Reference: https://www.kaggle.com/datasets/tommyngx/kneeoa
+
+path: /home/jayden/data/knee-osteoarthritis-dataset-with-severity
+train: train
+val: val
+test: test
+
+# Number of classes
+nc: 5
+
+# Class names (KL Grade)
+names:
+  0: Normal
+  1: Doubtful
+  2: Minimal
+  3: Moderate
+  4: Severe
