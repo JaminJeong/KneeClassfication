@@ -28,15 +28,15 @@ def parse_args():
     parser.add_argument(
         "--data",
         type=str,
-        default="configs/knee_cls.yaml",
-        help="Dataset config YAML path",
+        default="/workspace/data/knee-osteoarthritis-dataset-with-severity",
+        help="Dataset root directory (must contain train/ val/ test/ subdirs with class folders)",
     )
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
     parser.add_argument("--imgsz", type=int, default=224, help="Input image size")
     parser.add_argument("--batch", type=int, default=32, help="Batch size (-1 for auto)")
     parser.add_argument("--device", type=str, default="", help="Device: '' for auto, 'cpu', '0', '0,1'")
     parser.add_argument("--workers", type=int, default=8, help="DataLoader workers")
-    parser.add_argument("--project", type=str, default="runs/classify", help="Save directory")
+    parser.add_argument("--project", type=str, default="/workspace/runs/classify", help="Save directory")
     parser.add_argument("--name", type=str, default="knee_cls", help="Experiment name")
     parser.add_argument("--lr0", type=float, default=0.01, help="Initial learning rate")
     parser.add_argument("--patience", type=int, default=20, help="Early stopping patience (0 to disable)")
@@ -59,12 +59,19 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Resolve data config path relative to project root
-    root = Path(__file__).parent.parent
-    data_path = root / args.data
+    # Resolve data path: absolute paths are used as-is, relative paths resolved from project root
+    data_path = Path(args.data)
+    if not data_path.is_absolute():
+        data_path = Path(__file__).parent.parent / args.data
 
     if not data_path.exists():
-        raise FileNotFoundError(f"Dataset config not found: {data_path}")
+        raise FileNotFoundError(f"Dataset directory not found: {data_path}")
+    if not data_path.is_dir():
+        raise ValueError(
+            f"'--data' must be the dataset root directory, not a YAML file.\n"
+            f"  Got: {data_path}\n"
+            f"  Expected a directory containing train/ val/ test/ subdirs."
+        )
 
     # Load model (downloads pretrained weights automatically if not cached)
     if args.resume:
@@ -78,7 +85,7 @@ def main():
     print("Knee Osteoarthritis KL-Grade Classification Training")
     print(f"{'='*60}")
     print(f"  Model    : {args.model}")
-    print(f"  Data     : {data_path}")
+    print(f"  Data dir : {data_path}")
     print(f"  Epochs   : {args.epochs}")
     print(f"  Image sz : {args.imgsz}")
     print(f"  Batch    : {args.batch}")

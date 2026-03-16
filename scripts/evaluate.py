@@ -23,8 +23,8 @@ def parse_args():
     parser.add_argument(
         "--data",
         type=str,
-        default="configs/knee_cls.yaml",
-        help="Dataset config YAML path",
+        default="/workspace/data/knee-osteoarthritis-dataset-with-severity",
+        help="Dataset root directory (must contain train/ val/ test/ subdirs with class folders)",
     )
     parser.add_argument(
         "--split",
@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument("--batch", type=int, default=32, help="Batch size")
     parser.add_argument("--device", type=str, default="", help="Device: '' auto, 'cpu', '0'")
     parser.add_argument("--plot", action="store_true", help="Save confusion matrix and metric plots")
-    parser.add_argument("--project", type=str, default="runs/evaluate", help="Output directory")
+    parser.add_argument("--project", type=str, default="/workspace/runs/evaluate", help="Output directory")
     parser.add_argument("--name", type=str, default="knee_eval", help="Experiment name")
     return parser.parse_args()
 
@@ -54,14 +54,9 @@ def print_metrics_table(metrics):
 
 def compute_per_class_accuracy(model, data_path: str, split: str, imgsz: int, device):
     """Run predictions and compute per-class accuracy."""
-    import yaml
     from pathlib import Path as P
 
-    with open(data_path) as f:
-        cfg = yaml.safe_load(f)
-
-    dataset_root = P(cfg["path"])
-    split_dir = dataset_root / cfg[split]
+    split_dir = P(data_path) / split
 
     if not split_dir.exists():
         print(f"Split directory not found: {split_dir}")
@@ -122,10 +117,17 @@ def main():
     if not weights_path.exists():
         raise FileNotFoundError(f"Weights not found: {weights_path}")
 
-    root = Path(__file__).parent.parent
-    data_path = root / args.data
+    data_path = Path(args.data)
+    if not data_path.is_absolute():
+        data_path = Path(__file__).parent.parent / args.data
+
     if not data_path.exists():
-        raise FileNotFoundError(f"Dataset config not found: {data_path}")
+        raise FileNotFoundError(f"Dataset directory not found: {data_path}")
+    if not data_path.is_dir():
+        raise ValueError(
+            f"'--data' must be the dataset root directory, not a YAML file.\n"
+            f"  Got: {data_path}"
+        )
 
     print(f"Loading model: {weights_path}")
     model = YOLO(str(weights_path))

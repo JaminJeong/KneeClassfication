@@ -2,7 +2,7 @@
 # Kellgren-Lawrence (KL) Grade Classification
 # Reference: https://www.kaggle.com/datasets/tommyngx/kneeoa
 
-path: /home/jayden/data/knee-osteoarthritis-dataset-with-severity
+path: /workspace/data/knee-osteoarthritis-dataset-with-severity
 train: train
 val: val
 test: test

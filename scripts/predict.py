@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument("--batch", type=int, default=1, help="Batch size")
     parser.add_argument("--save", action="store_true", help="Save annotated results")
     parser.add_argument("--save-json", action="store_true", help="Save predictions to JSON")
-    parser.add_argument("--project", type=str, default="runs/predict", help="Output directory")
+    parser.add_argument("--project", type=str, default="/workspace/runs/predict", help="Output directory")
     parser.add_argument("--name", type=str, default="knee_predict", help="Experiment name")
     parser.add_argument("--top-k", type=int, default=5, help="Show top-k class probabilities")
     return parser.parse_args()
