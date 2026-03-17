@@ -54,6 +54,41 @@ services:
       bash -c "pip install streamlit --quiet &&
                streamlit run example/streamlit_app.py --server.port 8501 --server.address 0.0.0.0"
 
+  # REST API serving (FastAPI + Uvicorn)
+  serving:
+    build:
+      context: .
+      dockerfile: serving/Dockerfile
+    profiles: [serving]
+    environment:
+      - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls_py_test/weights/best.pt
+      - KNEE_IMGSZ=224
+      - KNEE_DEVICE=cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./serving:/workspace/serving
+      - ./runs:/workspace/runs
+
+  # REST API serving with GPU
+  serving-gpu:
+    build:
+      context: .
+      dockerfile: serving/Dockerfile
+    image: ultralytics/ultralytics:latest
+    profiles: [serving-gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - KNEE_MODEL_PATH=/workspace/runs/classify/knee_cls_py_test/weights/best.pt
+      - KNEE_IMGSZ=224
+      - KNEE_DEVICE=0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./serving:/workspace/serving
+      - ./runs:/workspace/runs
+
   # Jupyter Lab for experimentation
   jupyter:
     image: ultralytics/ultralytics:latest
