@@ -51,3 +51,6 @@ mlruns/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# runs
+runs/
